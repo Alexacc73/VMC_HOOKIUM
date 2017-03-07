@@ -1,3 +1,10 @@
+/*! \mainpage FCIQMC HEAD PAGE
+ * \section intro_sec Introduction
+ * (INTRO)
+
+*/
+
+
 #include "binaryManip.H"    /* Inludes  <bitset>  <climits>  <boost/math/special_functions/binomial.hpp>  <vector> */
 #include "planeWaves.H"     /* Includes <iostream>  <set>  <math.h>  <stdlib.h>  <algorithm> */
 #include "UEGHamiltonian.H" /*Includes initialisation: const int ORB_SIZE = 125;*/
