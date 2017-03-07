@@ -18,20 +18,20 @@ const double rs = 1.0;
 /** rs controls density of the Electron Gas. 
 "rs" is the radius of the sphere whose volume is that of the cell divided by the number of electrons*/
 const double numElectrons = 14; 
-const double Kc_CUTTOFF = 2.4 ; 
+const double Kc_CUTTOFF = 2 ; 
 /** Kc_CUTTOFF is the kinetic energy cutoff for the plane wave basis orbitals.
 E.g, a cutoff of "2" will allow the orbital [4 0 0] but not [5 0 0]. Set cutoff = 2.4 for 57 Orbitals (114 Spin Orbitals) */
 const int INTelectrons = numElectrons ;
 
 /* Parameters for Main FCIQMC Algorithm  */
-const double delt = 0.004 ;
+const double delt = 0.003 ;
 /** delt is the Imaginary timestep for the propogation of the "walker" population */
 const double zeta = 0.04 ;
 /** Zeta is a damping parameter which controls the agressiveness of the "shift" in the variable shift mode of the algorithm */
 const int AShift = 2 ;
 /** AShift controls how frequently the shift is changed in response to the population in the variable shift mode (AShift = 1 means every step) */
-const int numSteps = 30000;
-const int walkerCritical = 300000;
+const int numSteps = 500000;
+const int walkerCritical = 500000;
 /** After "walker critical" walkers have been spawned after a complete cycle (post annihilation) the variable shift mode is turned on */
 int initRefWalkers = 50;
 /** initRefWalkers is the number of wlakers which are initially placed on the reference (i.e Hartree Fock) determinant to begin the spawning */
@@ -573,8 +573,8 @@ int main(void){
 
     std::ofstream shoulderplot;
     std::ofstream shiftPlot;
-    shoulderplot.open ("SHOULDER_test.txt");
-    shiftPlot.open("SHIFT_test.txt");
+    shoulderplot.open ("SHOULDER_66S0_500000WC.txt");
+    shiftPlot.open("SHIFT_66SO_50000WC.txt");
    
     for(int i = 0; i < numSteps; i++){
         
