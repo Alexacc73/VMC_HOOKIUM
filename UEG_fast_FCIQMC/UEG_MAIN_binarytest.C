@@ -1,3 +1,11 @@
+/*! \mainpage FCIQMC HEAD PAGE
+ * \section intro_sec Introduction
+ *  ---> INCLUDED IN HEADER < GLOBAL_ORBITAL.H > is " const int ORB_SIZE = 125 " <--- 
+    ---> NB - - NUMBER OF ORBITALS MUST BE KNOWN A PRIORI FOR "binaryManip.C* AND for KEsortedKpoints[size][3]
+
+*/
+
+
 #include "binaryManip.H"    /* Inludes  <bitset>  <climits>  <boost/math/special_functions/binomial.hpp>  <vector> */
 #include "planeWaves.H"     /* Includes <iostream>  <set>  <math.h>  <stdlib.h>  <algorithm> */
 #include "UEGHamiltonian.H" /*Includes initialisation: const int ORB_SIZE = 125;*/
@@ -12,34 +20,53 @@
 
 
 
-/* Parameters for initial setup of UEG */
+
+/*
+*Parameters for initial setup of UEG 
+*/
+
+/** A number, nobody knows what it means */
 const double PI = 3.141592653589793;
-const double rs = 1.0; 
+
 /** rs controls density of the Electron Gas. 
-"rs" is the radius of the sphere whose volume is that of the cell divided by the number of electrons*/
+* "rs" is the radius of the sphere whose volume is that of the cell divided by the number of electrons*/
+const double rs = 1.0; 
+
+/** Total number of electrons -> half allocated Alpha spin, the other half allocated Beta Spin.*/
 const double numElectrons = 14; 
-const double Kc_CUTTOFF = 2 ; 
-/** Kc_CUTTOFF is the kinetic energy cutoff for the plane wave basis orbitals.
-E.g, a cutoff of "2" will allow the orbital [4 0 0] but not [5 0 0]. Set cutoff = 2.4 for 57 Orbitals (114 Spin Orbitals) */
 const int INTelectrons = numElectrons ;
 
-/* Parameters for Main FCIQMC Algorithm  */
-const double delt = 0.003 ;
+/** Kc_CUTTOFF is the kinetic energy cutoff for the plane wave basis orbitals.
+E.g, a cutoff of "2" will allow the orbital [4 0 0] but not [5 0 0]. Set cutoff = 2.4 for 57 Orbitals (114 Spin Orbitals) */
+const double Kc_CUTTOFF = 2 ; 
+
+
+
+/*
+ *-----> Parameters for Main FCIQMC Algorithm <----- 
+ */
+
 /** delt is the Imaginary timestep for the propogation of the "walker" population */
-const double zeta = 0.04 ;
+const double delt = 0.003 ;
+
 /** Zeta is a damping parameter which controls the agressiveness of the "shift" in the variable shift mode of the algorithm */
-const int AShift = 2 ;
+const double zeta = 0.04 ;
+
 /** AShift controls how frequently the shift is changed in response to the population in the variable shift mode (AShift = 1 means every step) */
+const int AShift = 2 ;
+
+/** Number of steps after which to terminate the algorithm*/
 const int numSteps = 500000;
-const int walkerCritical = 500000;
+
 /** After "walker critical" walkers have been spawned after a complete cycle (post annihilation) the variable shift mode is turned on */
-int initRefWalkers = 50;
+const int walkerCritical = 500000;
+
 /** initRefWalkers is the number of wlakers which are initially placed on the reference (i.e Hartree Fock) determinant to begin the spawning */
+int initRefWalkers = 50;
+
 
 long int pow2Array [ORB_SIZE];
 
-/** ---> INCLUDED IN HEADER < GLOBAL_ORBITAL.H > is " const int ORB_SIZE = 125 " <--- 
-    ---> NB - - NUMBER OF ORBITALS MUST BE KNOWN A PRIORI FOR "binaryManip.C* AND for KEsortedKpoints[size][3]*/
 
 inline constexpr std::uint64_t INLpow2 (std::uint64_t i)
 {
@@ -74,10 +101,16 @@ inline const int INLgetPositionInList(std::pair<long int, long int>& uniqueDet, 
 
 
 
-void SPAWN( const double cellLength, std::vector<int>& trueWalkerList, std::vector<int>& posWalkerList, std::vector<int>& negWalkerList,
-    double (&KEsortedList)[ORB_SIZE][3], std::set< std::pair<long int, long int> >& uniqueDetSet, 
-    std::pair< std::set< std::pair<long int, long int> >::iterator , bool >& result, 
-    std::vector<long int>& alphaDets, std::vector<long int>& betaDets ){
+void SPAWN( const double cellLength, 
+            std::vector<int>& trueWalkerList, 
+            std::vector<int>& posWalkerList, 
+            std::vector<int>& negWalkerList,
+            double (&KEsortedList)[ORB_SIZE][3], 
+            std::set< std::pair<long int, long int> >& uniqueDetSet, 
+            std::pair< std::set< std::pair<long int, 
+            long int> >::iterator , bool >& result, 
+            std::vector<long int>& alphaDets, 
+            std::vector<long int>& betaDets ){
 
     int walkerNum = 0;
     int intpSpawn = 0;
@@ -286,8 +319,13 @@ void SPAWN( const double cellLength, std::vector<int>& trueWalkerList, std::vect
 
 
 
-void DEATH_CLONE(const double cellLength, std::vector<int>& trueWalkerList, double (&KEsortedList)[ORB_SIZE][3], double& SHIFT,
-    std::vector<long int>& alphaDets, std::vector<long int>& betaDets, const double& HFEnergy){
+void DEATH_CLONE(const double cellLength, 
+                std::vector<int>& trueWalkerList, 
+                double (&KEsortedList)[ORB_SIZE][3], 
+                double& SHIFT,
+                std::vector<long int>& alphaDets, 
+                std::vector<long int>& betaDets, 
+                const double& HFEnergy){
     int walkerNum = 0;
     int INTnDeath = 0;
     int walkersToDie = 0;
@@ -337,8 +375,14 @@ void DEATH_CLONE(const double cellLength, std::vector<int>& trueWalkerList, doub
 }
 
 
-void ANNIHILATION(int& step, std::vector<int>& trueWalkerList, std::vector<int>& posWalkerList, std::vector<int>& negWalkerList,
-    std::set< std::pair<long int, long int> >& uniqueDeterminantSet, std::vector<long int>& alphaDetsBinary, std::vector<long int>& betaDetsBinary){
+void ANNIHILATION(int& step, 
+                std::vector<int>& trueWalkerList, 
+                std::vector<int>& posWalkerList, 
+                std::vector<int>& negWalkerList,
+                std::set< std::pair<long int, 
+                long int> >& uniqueDeterminantSet, 
+                std::vector<long int>& alphaDetsBinary, 
+                std::vector<long int>& betaDetsBinary){
 
     int numDets = 0;
     bool prune = false;
@@ -419,12 +463,16 @@ int totalWalkerNumber( std::vector<int>& trueWalkerList){
 
 
 /** variableShift function controls the shift in response to the population, and relates exactly to the equation:
-
-$$ S(\tau) = S(\tau - A\delta \tau) - \frac{\zeta}{A \delta \tau} ln\frac{N_w (\tau)}{N_w (\tau - A\delta \tau)}  $$
-
+ \f[
+ S(\tau) = S(\tau - A\delta \tau) - \frac{\zeta}{A \delta \tau} ln\frac{N_w (\tau)}{N_w (\tau - A\delta \tau)} 
+ \f]
  */
-double variableShift( const double& delt, const int& AShift, int& intTimestep, const double& zeta, 
-    std::vector<double>& totalWalkerTracker, std::vector<double>& shiftTracker){
+double variableShift( const double& delt, 
+                      const int& AShift, 
+                      int& intTimestep, 
+                      const double& zeta, 
+                      std::vector<double>& totalWalkerTracker, 
+                      std::vector<double>& shiftTracker){
 
   double walkNumT = totalWalkerTracker[intTimestep] ;
   double walkNumTminusA = totalWalkerTracker[intTimestep - AShift] ;
@@ -436,10 +484,15 @@ double variableShift( const double& delt, const int& AShift, int& intTimestep, c
   return newShift ;
 }
 
-/** The Projector Energy gives an independent estimation of the energy from the shift, according to equation
-$$ E_{proj} =  \sum_{j \neq 0} \Big \langle D_j | H | D_0 \Big \rangle \frac{N_j (\tau)}{N_0 (\tau)} $$
-double projectorEnergy
+/** The Projector Energy gives an independent estimation of the energy from the shift, according to equation:
+\f[
+ E_{proj} =  \sum_{j \neq 0} \Big \langle D_j | H | D_0 \Big \rangle \frac{N_j (\tau)}{N_0 (\tau)} 
+\f]
 */
+
+double projectorEnergy(){
+    return 1;
+}
 
 
 
