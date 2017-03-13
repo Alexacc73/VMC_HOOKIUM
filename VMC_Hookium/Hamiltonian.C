@@ -13,9 +13,12 @@
 #include <algorithm>
 #include <vector>
 #include <math.h>
+#include <iomanip>
 #include <boost/math/special_functions/factorials.hpp>
 
+const double kspring = 0.25;
 const double SQRT2 = 1.4142135623730950488 ;
+const double WFCoeff [4] = {1, 0.10825043, -0.00940132, 0.00157574} ;
 
 /**
 * The nth Hermite polynomial:
@@ -50,6 +53,7 @@ double hermite_Nth(int N, double r){
 	return H_np1;
 }
 
+
 /**
 * The first derivative of the nth Hermite polynomial, easily defined from the nth Hermite:
 \f[
@@ -79,7 +83,7 @@ double hermite_diff2_Nth(int N, double r){
 /**
 * This is simply a constant coefficient for f(r), or "FofR_Kth":
 \f[
- \beta = \frac{ \sqrt{2}}{ 2^k \sqrt{ (2k-1)! } (2\pi)^{ \frac{3}{4} } }
+ \beta _k = \frac{ \sqrt{2}}{ 2^k \sqrt{ (2k-1)! } (2\pi)^{ \frac{3}{4} } }
 \f]
 */
 double beta_Kth(int K){
@@ -98,7 +102,7 @@ double beta_Kth(int K){
 /**
 * This function defines \f$ f_k(r) \f$, which is itself a function of \f$ H_{2k-1}(r), \ \beta _{k} \f$ :
 \f[
- f_k (r) = H_{2k-1}( \frac{r}{ \sqrt{2} } ) \frac {\beta _{k}}{r} 
+ f_k (r) = H_{2k-1}( \frac{r}{ \sqrt{2} } ) \frac {\beta _k}{r} 
 \f]
 */
 double FofR_Kth(int K, double r){
@@ -184,31 +188,89 @@ double PHI_laplace_Kth(int K, double r){
 
 
 
-
-
-double hookiumWF(double&r ){
-
-}
-
-
-double laplacianHookiumWF(double& r){
-
-}
-
-
-double hamiltonianHookium(double& Ekinetic, double& Epot, double& exchange){
-
+double singleParticleWF(int numTerms, double r ){
+	double totalWF = 0;
+	double partialPhiWF = 0;
+	int K  = 0;
+	for(int i = 0; i < numTerms; i++){
+		K = i+1;
+		partialPhiWF = PHI_Kth(K, r);
+		totalWF += partialPhiWF*WFCoeff[i];
+	}
+	return totalWF;
 }
 
 
 
 
+/**
+* This function returns the probabilty weighting, upon moving an electron in space via a stochastic move.
+* It returns:
+\f[
+\rho(R) = | \frac{\Phi(r')}{\Phi(r)} |^2
+\f]
+*/
+double probabiltyWeight(double r1, double r2, double r1Trial, double r2Trial){
+	double WFup = singleParticleWF(4, r1);
+	double WFdown = singleParticleWF(4, r2);
+	double WFtotal = WFup * WFdown;
+	double WFupTrial = singleParticleWF(4, r1Trial);
+	double WFdownTrial = singleParticleWF(4, r2Trial);
+	double WFtotalTrial = WFupTrial * WFdownTrial;
+	double probRatio = (WFtotalTrial/WFtotal)*(WFtotalTrial/WFtotal) ;
+	return probRatio;
+}
 
 
 
+double hamiltonianHookium(int numTerms, double r1, double r2){
+	double WFup = singleParticleWF(numTerms, r1);
+	double WFdown = singleParticleWF(numTerms, r2);
+	double WFtotal = WFup*WFdown;
+	double laplaceWFup = 0;
+	double partialUp = 0;
+	double laplaceWFdown = 0;
+	double partialDown = 0;
+	int K;
+	for(int i = 0; i < numTerms; i++){
+		K = i+1;
+		partialUp = PHI_laplace_Kth(K, r1) * WFCoeff[i];
+		partialDown = PHI_laplace_Kth(K, r2) * WFCoeff[i];
+		laplaceWFup += partialUp;
+		laplaceWFdown += partialDown;
+	}
+	double result;
+
+	result = -0.5*(laplaceWFup*WFdown + laplaceWFdown*WFup) + 0.5*kspring*WFtotal*(r1*r1 + r2*r2) + WFtotal/(fabs(r2-r1));
+	return result;
+}
+
+
+
+/**
+*/
+double localEnergy(){
+	double result;
+	return result;
+
+}
+
+
+
+
+
+
+
+/**
+------------------------------------------------
+M A I N  -  S T A R T S  -  H E R E 
+------------------------------------------------
+*/
 int main(void){
+	std::cout << std::setprecision(10);
 	std::cout << exp(4) << std::endl;
 	double phi_N = PHI_Kth(1, 1);
 	std::cout << "0th phi =  " << phi_N << std::endl;
+	std::cout << WFCoeff[1] << std::endl;
 	return 1;
 }
