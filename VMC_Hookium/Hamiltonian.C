@@ -221,8 +221,12 @@ double probabiltyWeight(double r1, double r2, double r1Trial, double r2Trial){
 	return probRatio;
 }
 
-
-
+/**
+* Returns the instantaneous Hamiltonian eigenvalue for a specific local state of the wavefunction. Returns:
+\f[
+\hat{H} \Psi _T (R)
+\f]
+*/
 double hamiltonianHookium(int numTerms, double r1, double r2){
 	double WFup = singleParticleWF(numTerms, r1);
 	//std::cout << "WFup = " << WFup << std::endl;
@@ -251,7 +255,6 @@ double hamiltonianHookium(int numTerms, double r1, double r2){
 	//std::cout << "END HAMIL RESULT = " << result << std::endl;
 	return result;
 }
-
 
 
 /**
