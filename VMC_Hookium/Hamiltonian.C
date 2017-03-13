@@ -225,8 +225,11 @@ double probabiltyWeight(double r1, double r2, double r1Trial, double r2Trial){
 
 double hamiltonianHookium(int numTerms, double r1, double r2){
 	double WFup = singleParticleWF(numTerms, r1);
+	//std::cout << "WFup = " << WFup << std::endl;
 	double WFdown = singleParticleWF(numTerms, r2);
+	//std::cout << "Wdown = " << WFdown << std::endl;
 	double WFtotal = WFup*WFdown;
+	//std::cout << "WFtotal = " << WFtotal << std::endl;
 	double laplaceWFup = 0;
 	double partialUp = 0;
 	double laplaceWFdown = 0;
@@ -239,9 +242,13 @@ double hamiltonianHookium(int numTerms, double r1, double r2){
 		laplaceWFup += partialUp;
 		laplaceWFdown += partialDown;
 	}
-	double result;
+	//std::cout << "LAPLACE up = " << laplaceWFup << std::endl;
+	//std::cout << "LAPLACE down = " << laplaceWFdown << std::endl;
 
+	double result;
+	//std::cout << "LASt TERM = " << WFtotal/(fabs(r2-r1)) << std::endl;
 	result = -0.5*(laplaceWFup*WFdown + laplaceWFdown*WFup) + 0.5*kspring*WFtotal*(r1*r1 + r2*r2) + WFtotal/(fabs(r2-r1));
+	//std::cout << "END HAMIL RESULT = " << result << std::endl;
 	return result;
 }
 
@@ -268,9 +275,8 @@ M A I N  -  S T A R T S  -  H E R E
 */
 int main(void){
 	std::cout << std::setprecision(10);
-	std::cout << exp(4) << std::endl;
-	double phi_N = PHI_Kth(1, 1);
-	std::cout << "0th phi =  " << phi_N << std::endl;
-	std::cout << WFCoeff[1] << std::endl;
+
+
+	std::cout << "Hamiltonian Element : " << hamiltonianHookium(4, 0.2, 0.5) << std::endl; 
 	return 1;
 }
