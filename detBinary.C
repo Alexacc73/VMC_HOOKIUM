@@ -60,27 +60,6 @@ int main(void){
 	srand(time(NULL)) ;
 
 
-	double RAND;
-	double badrand;
-	int       rand_int = 1000000;
-	double rand_divide = 1000000;
-
-    double RAND_sum = 0;
-    double badrand_sum = 0 ;
-    int steps = 5;
-	for (int i=0; i<steps; i++){
-		RAND = ((double) rand() / RAND_MAX) ;
-		//badrand = ((double)(rand()% rand_int)) / rand_divide ;
-		badrand = (rand() % 4 ) ;
-		//std::cout << badrand << std::endl;
-
-		RAND_sum += RAND;
-		badrand_sum += badrand;
-		//std::cout << "Good = " << RAND << std::endl;
-		//std::cout << "Other = " << badrand << '\n' << std::endl;
-	}
-	//std::cout << "RAND mean = " << RAND_sum / ((double)steps) << std::endl;
-	//std::cout << "badrand mean = " << badrand_sum / ((double)steps) << std::endl;
 
     long int num = 127;
     std::string binaryNum = decimalToBinary(num);
@@ -95,12 +74,8 @@ int main(void){
     long int betaHF = 127;
     std::string alphaSTR = decimalToBinary(alphaHF);
 
-    //myDet.insert(std::make_pair(alphaHF, betaHF)); //1
-    //myDet.insert(std::make_pair(179387, 131029));  //2
-    //mydetSTR.insert( decimalToBinary(101029) );
-    //mydetSTR.insert( decimalToBinary(127) );
 
-    int cycle = 1000;
+    int cycle = 100;
     long int insert = 0;
     std::bitset<57> INBIT (1);
     //myDetBit.insert(std::make_pair(1, 2));
@@ -168,6 +143,8 @@ int main(void){
     std::bitset<64> one (1);
     foo.set(63,1);
     std::cout << foo << std::endl;
+
+
    
     return 1;
 
