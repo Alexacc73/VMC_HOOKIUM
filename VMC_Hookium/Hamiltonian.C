@@ -207,7 +207,7 @@ double singleParticleWF(int numTerms, double r ){
 * This function returns the probabilty weighting, upon moving an electron in space via a stochastic move.
 * It returns:
 \f[
-\rho(R) = | \frac{\Phi(r')}{\Phi(r)} |^2
+\rho(R) = | \frac{\Psi(r')}{\Psi(r)} |^2
 \f]
 */
 double probabiltyWeight(double r1, double r2, double r1Trial, double r2Trial){
@@ -255,11 +255,17 @@ double hamiltonianHookium(int numTerms, double r1, double r2){
 
 
 /**
+* Function used to determine the Local Energy, \f$ E_L \f$, which gives the stochastic energy estimator summed over mutiple
+* Monte Carlo Cycles, it has the simple form:
+\f[
+E_L = \frac{ \hat{H} \Psi _T (R)}{\Psi _T (R)}
+\f]
 */
-double localEnergy(){
-	double result;
+double localEnergy(int numTerms, double r1, double r2){
+	double hamil = hamiltonianHookium(numTerms, r1, r2);
+	double WFtotal = singleParticleWF(numTerms, r1) * singleParticleWF(numTerms, r2) ;
+	double result = hamil/WFtotal;
 	return result;
-
 }
 
 
@@ -277,6 +283,7 @@ int main(void){
 	std::cout << std::setprecision(10);
 
 
-	std::cout << "Hamiltonian Element : " << hamiltonianHookium(4, 0.2, 0.5) << std::endl; 
+	std::cout << "Hamiltonian Element : " << hamiltonianHookium(4, 1, 0.5) << std::endl; 
+	std::cout << "Local Energy : " << localEnergy(4, 1, 0.5) << std::endl; 
 	return 1;
 }
