@@ -107,7 +107,6 @@ double FofR_Kth(int K, double r){
 	double beta = beta_Kth(K);
 	double result = (hermite_2km1*beta) / r;
 	return result;
-
 }
 
 
@@ -124,7 +123,6 @@ double FofR_diff1_Kth(int K, double r){
 	double hermite_2km1 = hermite_Nth(N, (r/SQRT2));
 	double result = (beta/r)*( hermite_diff1 - (hermite_2km1/r) );
 	return result;
-
 }
 
 
@@ -143,7 +141,6 @@ double FofR_diff2_Kth(int K, double r){
 	double hermite_diff2 = hermite_diff2_Nth(N, (r/SQRT2));
 	double result = (beta/(r*r*r))*( r*r*hermite_diff2 - 2*r*hermite_diff1 + 2*hermite_2km1 );
 	return result;
-
 }
 
 
@@ -163,11 +160,23 @@ double PHI_Kth(int K, double r){
 	double exponent = exp(-(r*r)/4);
 	double result = FofR*exponent;
 	return result;
-
 }
 
-double PHI_laplace_Kth(){
 
+/**
+* This function returns the second derivative of \f$ \phi _k (r) \f$, called the laplacian in this context of the Hamiltonian.
+* It has the functional form:
+\f[
+\phi ''_k (r) = exp\{ -\frac{r^2}{4} \} \Big\{ f''_k(r) - 4rf'_k(r) + [4r^2 - 2]f(r) \Big\}
+\f]
+*/
+double PHI_laplace_Kth(int K, double r){
+	double exponent = exp(-(r*r)/4);
+	double FofR = FofR_Kth(K, r);
+	double FofR_diff1 = FofR_diff1_Kth(K, r);
+	double FofR_diff2 = FofR_diff2_Kth(K, r);
+	double result = exponent*(FofR_diff2 - 4*r*FofR_diff1 + ((4*r*r - 2)*FofR) );
+	return result;
 }
 
 
