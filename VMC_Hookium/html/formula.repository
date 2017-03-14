@@ -1,0 +1,45 @@
+\form#0:$ H_{n+1}(r) = 2xH_n (r) - 2nH_{n-1}(r) $
+\form#1:$ H'_n (r) = 2nH_{n-1}(r) $
+\form#2:$ H''_n (r) = \frac{\partial}{\partial r} 2nH_{n-1}(r) = 4n(n-1)H_{n-2} (r) $
+\form#3:$ \beta = \frac{ \sqrt{2}}{ 2^k \sqrt{ (2k-1)! } (2\pi)^{ \frac{3}{4} } } $
+\form#4:$ f(r) $
+\form#5:$ H_{2k-1}(r), \ \beta _{k} $
+\form#6:$ f(r) = H_{2k-1}( \frac{r}{sqrt{2}} ) \frac {\beta _{k}}{r} $
+\form#7:$ f(r) = H_{2k-1}( \frac{r}{ \sqrt{2} } ) \frac {\beta _{k}}{r} $
+\form#8:$ f_k(r) $
+\form#9:$ f_k (r) = H_{2k-1}( \frac{r}{ \sqrt{2} } ) \frac {\beta _{k}}{r} $
+\form#10:$f_k(r) $
+\form#11:$ \beta _k \Big\{ \frac{1}{r} H'_{2k-1} (\frac{r}{\sqrt{2}}) - \frac{1}{r^2} H_{2k-1} (\frac{1}{r^2}) ) \Big\} $
+\form#12:$ \beta _k \Big\{ \frac{1}{r} H'_{2k-1} (\frac{r}{\sqrt{2}}) - \frac{1}{r^2} H_{2k-1} (\frac{r}{\sqrt{2}}) ) \Big\} $
+\form#13:$ f'_k(r) = \beta _k \Big\{ \frac{1}{r} H'_{2k-1} (\frac{r}{\sqrt{2}}) - \frac{1}{r^2} H_{2k-1} (\frac{r}{\sqrt{2}}) ) \Big\} $
+\form#14:$ f''_k(r) = /frac{\beta _k}{r^3} \Big\{ r^2 H'_{2k-1} (\frac{r}{\sqrt{2}}) - 2rH'_{2k-1}(\frac{r}{\sqrt{2}}) + 2H_{2k-1} (\frac{r}{\sqrt{2}}) ) \Big\} $
+\form#15:$ f''_k(r) = \frac{\beta _k}{r^3} \Big\{ r^2 H'_{2k-1} (\frac{r}{\sqrt{2}}) - 2rH'_{2k-1}(\frac{r}{\sqrt{2}}) + 2H_{2k-1} (\frac{r}{\sqrt{2}}) ) \Big\} $
+\form#16:$ f''_k(r) = \frac{\beta _k}{r^3} \Big\{ r^2 H''_{2k-1} (\frac{r}{\sqrt{2}}) - 2rH'_{2k-1}(\frac{r}{\sqrt{2}}) + 2H_{2k-1} (\frac{r}{\sqrt{2}}) ) \Big\} $
+\form#17:$ \theta _k (r) $
+\form#18:$ $
+\form#19:$ \theta _k (r) = f_k (r) exp\{ -\frac{r^2}{4} \} $
+\form#20:$ \phi _k (r) $
+\form#21:$ \phi _k (r) = f_k (r) exp\{ -\frac{r^2}{4} \} $
+\form#22:$ \Psi (r) \approx \Psi _N (r) = \sum_{k = 1}^{N} c_k \phi _k (r) $
+\form#23:$ $$ \Psi (r) \approx \Psi _N (r) = \sum_{k = 1}^{N} c_k \phi _k (r) $$ $
+\form#24:\[ \Psi (r) \approx \Psi _N (r) = \sum_{k = 1}^{N} c_k \phi _k (r) \]
+\form#25:\[ H_{n+1}(r) = 2xH_n (r) - 2nH_{n-1}(r) \]
+\form#26:\[ H'_n (r) = 2nH_{n-1}(r) \]
+\form#27:\[ H''_n (r) = \frac{\partial}{\partial r} 2nH_{n-1}(r) = 4n(n-1)H_{n-2} (r) \]
+\form#28:\[ \beta = \frac{ \sqrt{2}}{ 2^k \sqrt{ (2k-1)! } (2\pi)^{ \frac{3}{4} } } \]
+\form#29:\[ f_k (r) = H_{2k-1}( \frac{r}{ \sqrt{2} } ) \frac {\beta _{k}}{r} \]
+\form#30:\[ f'_k(r) = \beta _k \Big\{ \frac{1}{r} H'_{2k-1} (\frac{r}{\sqrt{2}}) - \frac{1}{r^2} H_{2k-1} (\frac{r}{\sqrt{2}}) ) \Big\} \]
+\form#31:\[ f''_k(r) = \frac{\beta _k}{r^3} \Big\{ r^2 H''_{2k-1} (\frac{r}{\sqrt{2}}) - 2rH'_{2k-1}(\frac{r}{\sqrt{2}}) + 2H_{2k-1} (\frac{r}{\sqrt{2}}) ) \Big\} \]
+\form#32:\[ \phi _k (r) = f_k (r) exp\{ -\frac{r^2}{4} \} \]
+\form#33:\[ \phi ''_k (r) = exp\{ -\frac{r^2}{4} \} \Big\{ f''_k(r) - 4rf'_k(r) + f(r)[4r^2 - 2] \Big\} \]
+\form#34:\[ \phi ''_k (r) = exp\{ -\frac{r^2}{4} \} \Big\{ f''_k(r) - 4rf'_k(r) + [4r^2 - 2]f(r) \Big\} \]
+\form#35:\[ \rho(R) = | /frac{\Phi(r')}{\Phi(r)} |^2 \]
+\form#36:\[ \rho(R) = | \frac{\Phi(r')}{\Phi(r)} |^2 \]
+\form#37:\[ \beta _k = \frac{ \sqrt{2}}{ 2^k \sqrt{ (2k-1)! } (2\pi)^{ \frac{3}{4} } } \]
+\form#38:\[ f_k (r) = H_{2k-1}( \frac{r}{ \sqrt{2} } ) \frac {\beta _k}{r} \]
+\form#39:$ E_L $
+\form#40:\[ E_L = \frac{H \Phi _T (R)}{\Phi _T (R)} \]
+\form#41:\[ E_L = \frac{H \Psi _T (R)}{\Psi _T (R)} \]
+\form#42:\[ \rho(R) = | \frac{\Psi(r')}{\Psi(r)} |^2 \]
+\form#43:\[ E_L = \frac{ \hat{H} \Psi _T (R)}{\Psi _T (R)} \]
+\form#44:\[ \hat{H} \Psi _T (R) \]

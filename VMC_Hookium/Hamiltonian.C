@@ -19,6 +19,7 @@
 const double kspring = 0.25;
 const double SQRT2 = 1.4142135623730950488 ;
 const double WFCoeff [4] = {1, 0.10825043, -0.00940132, 0.00157574} ;
+const int EXPAND = 4;
 
 /**
 * The nth Hermite polynomial:
@@ -188,7 +189,7 @@ double PHI_laplace_Kth(int K, double r){
 
 
 
-double singleParticleWF(int numTerms, double r ){
+double singleParticleWF(const int numTerms, double r ){
 	double totalWF = 0;
 	double partialPhiWF = 0;
 	int K  = 0;
@@ -211,11 +212,11 @@ double singleParticleWF(int numTerms, double r ){
 \f]
 */
 double probabiltyWeight(double r1, double r2, double r1Trial, double r2Trial){
-	double WFup = singleParticleWF(4, r1);
-	double WFdown = singleParticleWF(4, r2);
+	double WFup = singleParticleWF(EXPAND, r1);
+	double WFdown = singleParticleWF(EXPAND, r2);
 	double WFtotal = WFup * WFdown;
-	double WFupTrial = singleParticleWF(4, r1Trial);
-	double WFdownTrial = singleParticleWF(4, r2Trial);
+	double WFupTrial = singleParticleWF(EXPAND, r1Trial);
+	double WFdownTrial = singleParticleWF(EXPAND, r2Trial);
 	double WFtotalTrial = WFupTrial * WFdownTrial;
 	double probRatio = (WFtotalTrial/WFtotal)*(WFtotalTrial/WFtotal) ;
 	return probRatio;
@@ -227,7 +228,7 @@ double probabiltyWeight(double r1, double r2, double r1Trial, double r2Trial){
 \hat{H} \Psi _T (R)
 \f]
 */
-double hamiltonianHookium(int numTerms, double r1, double r2){
+double hamiltonianHookium(const int numTerms, double r1, double r2){
 	double WFup = singleParticleWF(numTerms, r1);
 	//std::cout << "WFup = " << WFup << std::endl;
 	double WFdown = singleParticleWF(numTerms, r2);
@@ -264,7 +265,7 @@ double hamiltonianHookium(int numTerms, double r1, double r2){
 E_L = \frac{ \hat{H} \Psi _T (R)}{\Psi _T (R)}
 \f]
 */
-double localEnergy(int numTerms, double r1, double r2){
+double localEnergy(const int numTerms, double r1, double r2){
 	double hamil = hamiltonianHookium(numTerms, r1, r2);
 	double WFtotal = singleParticleWF(numTerms, r1) * singleParticleWF(numTerms, r2) ;
 	double result = hamil/WFtotal;
@@ -284,9 +285,21 @@ M A I N  -  S T A R T S  -  H E R E
 */
 int main(void){
 	std::cout << std::setprecision(10);
+	clock_t start;
+	clock_t end;
 
 
-	std::cout << "Hamiltonian Element : " << hamiltonianHookium(4, 1, 0.5) << std::endl; 
-	std::cout << "Local Energy : " << localEnergy(4, 1, 0.5) << std::endl; 
+	std::cout << "Hamiltonian Element : " << hamiltonianHookium(EXPAND, 1, 0.5) << std::endl; 
+	start = clock();
+	for(int i = 0; i<100; i++){
+		for(int j = 0; j<100; j++){
+			//std::cout << "Local Energy : " << 
+			localEnergy(EXPAND, 0.01*i, 0.01*j);  //<< std::endl;
+		}
+	}
+	end = clock();
+	double TIME = end-start;
+	std::cout << "LOOP TIME = " << TIME/CLOCKS_PER_SEC << std::endl;
+	 
 	return 1;
 }
