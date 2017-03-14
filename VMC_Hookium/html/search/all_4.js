@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['localenergy',['localEnergy',['../_hamiltonian_8_c.html#a1296097286a47b7bb99899a75c931733',1,'Hamiltonian.C']]]
+  ['kspring',['kspring',['../_hamiltonian_8_c.html#a38ea2cbc62615007f27ca01aebdc04a8',1,'Hamiltonian.C']]]
 ];

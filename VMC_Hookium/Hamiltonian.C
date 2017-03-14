@@ -19,6 +19,7 @@
 const double kspring = 0.25;
 const double SQRT2 = 1.4142135623730950488 ;
 const double WFCoeff [4] = {1, 0.10825043, -0.00940132, 0.00157574} ;
+const double DELTA = 0.05;
 const int EXPAND = 4;
 
 /**
@@ -185,10 +186,13 @@ double PHI_laplace_Kth(int K, double r){
 }
 
 
-
-
-
-
+/**
+* This returns a WF, evaluated for a single electron (of the two) in the Hookium system, \f$ \Psi _1 (r_1) \f$.
+* The total trail-WF is evaluated simply by the product of two of these functions :
+\f[
+\Psi _T (\{R_i\}) = \Psi _1 (r_1) \Psi _2 (r_2)
+\f]
+*/
 double singleParticleWF(const int numTerms, double r ){
 	double totalWF = 0;
 	double partialPhiWF = 0;
@@ -200,8 +204,6 @@ double singleParticleWF(const int numTerms, double r ){
 	}
 	return totalWF;
 }
-
-
 
 
 /**
@@ -222,13 +224,14 @@ double probabiltyWeight(double r1, double r2, double r1Trial, double r2Trial){
 	return probRatio;
 }
 
+
 /**
 * Returns the instantaneous Hamiltonian eigenvalue for a specific local state of the wavefunction. Returns:
 \f[
 \hat{H} \Psi _T (R)
 \f]
 */
-double hamiltonianHookium(const int numTerms, double r1, double r2){
+double hamiltonianHookium(const int numTerms, double r1, double r2, double r_12){
 	double WFup = singleParticleWF(numTerms, r1);
 	//std::cout << "WFup = " << WFup << std::endl;
 	double WFdown = singleParticleWF(numTerms, r2);
@@ -249,10 +252,9 @@ double hamiltonianHookium(const int numTerms, double r1, double r2){
 	}
 	//std::cout << "LAPLACE up = " << laplaceWFup << std::endl;
 	//std::cout << "LAPLACE down = " << laplaceWFdown << std::endl;
-
 	double result;
 	//std::cout << "LASt TERM = " << WFtotal/(fabs(r2-r1)) << std::endl;
-	result = -0.5*(laplaceWFup*WFdown + laplaceWFdown*WFup) + 0.5*kspring*WFtotal*(r1*r1 + r2*r2) + WFtotal/(fabs(r2-r1));
+	result = -0.5*(laplaceWFup*WFdown + laplaceWFdown*WFup) + 0.5*kspring*WFtotal*(r1*r1 + r2*r2) + WFtotal/r_12;
 	//std::cout << "END HAMIL RESULT = " << result << std::endl;
 	return result;
 }
@@ -265,8 +267,8 @@ double hamiltonianHookium(const int numTerms, double r1, double r2){
 E_L = \frac{ \hat{H} \Psi _T (R)}{\Psi _T (R)}
 \f]
 */
-double localEnergy(const int numTerms, double r1, double r2){
-	double hamil = hamiltonianHookium(numTerms, r1, r2);
+double localEnergy(const int numTerms, double r1, double r2, double r_12){
+	double hamil = hamiltonianHookium(numTerms, r1, r2, r_12);
 	double WFtotal = singleParticleWF(numTerms, r1) * singleParticleWF(numTerms, r2) ;
 	double result = hamil/WFtotal;
 	return result;
@@ -274,6 +276,90 @@ double localEnergy(const int numTerms, double r1, double r2){
 
 
 
+
+
+/**
+------------------------------------------------
+V M C  -  R O U T I N E S 
+------------------------------------------------
+*/
+
+double getRvector(double x, double y, double z){
+	double R;
+	R = pow((x*x + y*y + z*z), 0.5);
+	return R;
+}
+
+double getR12vector(double x1, double y1, double z1, double x2, double y2, double z2){
+	double r_12;
+	r_12 = (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1);
+	r_12 = pow(r_12, 0.5);
+	return r_12;
+}
+
+void initialiseWalker(std::vector< std::tuple<double, double, double> >& vector1,
+	                  std::vector< std::tuple<double, double, double> >& vector2){
+	double x1, y1, z1;
+	double x2, y2, z2;
+	x1 = std_rand() - 0.5;
+	y1 = std_rand() - 0.5;
+	z1 = std_rand() - 0.5;
+	x2 = std_rand() - 0.5;
+	y2 = std_rand() - 0.5;
+	z2 = std_rand() - 0.5;
+	vector1.push_back( std::make_tuple(x1, y1, z1) );
+	vector2.push_back( std::make_tuple(x2, y2, z2) );
+}
+
+
+void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
+	            std::vector< std::tuple<double, double, double> >& vector2,
+	            std::vector<double>& energyList){
+	double x1, y1, z1, x2, y2, z2;
+	double xtrial, ytrial, ztrial;
+	double rTrial;
+	double r_12;
+	double r1Current, r2Current;
+	double probTrial;
+	double newEnergy = 0;
+	double metropolisRand = std_rand();
+    x1 = std::get<0>(vector1[0]);
+    y1 = std::get<1>(vector1[0]);
+    z1 = std::get<2>(vector1[0]);
+    r1Current = getRvector(x1, y1, z1);
+    x2 = std::get<0>(vector2[0]);
+    y2 = std::get<1>(vector2[0]);
+    z2 = std::get<2>(vector2[0]);
+    r2Current = getRvector(x2, y2, z2);
+
+	xtrial = x1 + DELTA*gasdev() ;
+	ytrial = y1 + DELTA*gasdev() ;
+	ztrial = z1 + DELTA*gasdev() ;
+	rTrial = getRvector(xtrial, ytrial, ztrial);
+	probTrial = probabiltyWeight(r1Current, r2Current, rTrial, r2Current);
+	//std::cout<< "ProbTrial Value = " << probTrial << std::endl;
+	if( probTrial > metropolisRand ){ // RANDOM SINGLE ELECTRON MOVE ACCEPTED
+		//std::cout << "RANDOM SINGLE ELECTRON MOVE ACCEPTED" << std::endl;
+		std::get<0>(vector1[0]) = xtrial;
+		std::get<1>(vector1[0]) = ytrial;
+		std::get<2>(vector1[0]) = ztrial;
+	}
+	x1 = std::get<0>(vector1[0]);
+    y1 = std::get<1>(vector1[0]);
+    z1 = std::get<2>(vector1[0]);
+    r1Current = getRvector(x1, y1, z1);
+	r_12 = getR12vector(x1, y1, z1, x2, y2, z2);
+	////std::cout << "r_12 = " << r_12 << std::endl;
+	newEnergy = localEnergy(EXPAND, r1Current, r2Current, r_12 );
+	energyList.push_back(newEnergy);
+	if(newEnergy > 100){
+		std::cout << "!!! HIGH ENERGY !!!" << std::endl;
+		std::cout << "Energy = " << newEnergy << std::endl;
+		std::cout << "|r2-r1| distance = " << r_12 << std::endl;
+		std::cout << "r1 = " << r1Current << ", and r2 = " << r2Current << '\n' << std::endl;
+	}
+
+}
 
 
 
@@ -284,22 +370,36 @@ M A I N  -  S T A R T S  -  H E R E
 ------------------------------------------------
 */
 int main(void){
+	srand(492832);
 	std::cout << std::setprecision(10);
 	clock_t start;
 	clock_t end;
 
-
-	std::cout << "Hamiltonian Element : " << hamiltonianHookium(EXPAND, 1, 0.5) << std::endl; 
+	std::cout << "Hamiltonian Element : " << hamiltonianHookium(EXPAND, 1, 0.5, 0.5) << std::endl; 
+	/*
 	start = clock();
-	for(int i = 0; i<100; i++){
-		for(int j = 0; j<100; j++){
-			//std::cout << "Local Energy : " << 
-			localEnergy(EXPAND, 0.01*i, 0.01*j);  //<< std::endl;
-		}
-	}
 	end = clock();
 	double TIME = end-start;
 	std::cout << "LOOP TIME = " << TIME/CLOCKS_PER_SEC << std::endl;
+	*/
+    std::vector<double> localEnergyAccumulator;
+
+	std::vector< std::tuple<double, double, double> > r1 ; 
+	std::vector< std::tuple<double, double, double> > r2 ; 
+	initialiseWalker(r1, r2);
+	std::cout << "[x y z] = [" << std::get<0>(r1[0]) <<" "<< std::get<1>(r1[0]) <<" "<< std::get<2>(r1[0]) << "]" << std::endl;
+
+
+    std::ofstream energyAccum;
+    energyAccum.open("ENERGIES_VMC");
+    for(int i = 0; i<100000; i++){
+    	metropStep(r1, r2, localEnergyAccumulator);
+    	metropStep(r2, r1, localEnergyAccumulator);
+    }
+	std::cout << "[x y z] = [" << std::get<0>(r1[0]) <<" "<< std::get<1>(r1[0]) <<" "<< std::get<2>(r1[0]) << "]" << std::endl;
 	 
+	for(int i = 0; i < localEnergyAccumulator.size(); i++){
+		energyAccum << localEnergyAccumulator[i] << std::endl;
+	}
 	return 1;
 }

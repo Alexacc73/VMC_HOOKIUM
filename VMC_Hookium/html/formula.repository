@@ -43,3 +43,6 @@
 \form#42:\[ \rho(R) = | \frac{\Psi(r')}{\Psi(r)} |^2 \]
 \form#43:\[ E_L = \frac{ \hat{H} \Psi _T (R)}{\Psi _T (R)} \]
 \form#44:\[ \hat{H} \Psi _T (R) \]
+\form#45:$ \Psi _1 $
+\form#46:$ \Psi _1 (r_1) $
+\form#47:\[ \Psi _T (\{R_i\}) = \Psi _1 (r_1) \Psi _2 (r_2) \]

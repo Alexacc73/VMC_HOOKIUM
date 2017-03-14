@@ -4,14 +4,12 @@
 #include <cstdlib>
 
 
-inline double std_rand()
-{
+inline double std_rand(){
     return rand() / (RAND_MAX + 1.0);
 }
 
 
-double gasdev()
-{
+double gasdev(){
     // From Numerical Recipes
     // Returns a normally distributed deviate with zero mean and unit variance
     static int iset = 0;
