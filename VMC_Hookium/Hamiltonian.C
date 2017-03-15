@@ -17,14 +17,14 @@
 #include <boost/math/special_functions/factorials.hpp>
 
 const int EXPAND = 5;
-const int numWalkers = 10000;
-const int numEquilSteps = 1000;
+const int numWalkers = 100;
+const int numEquilSteps = 100000;
 
 const double kspring = 0.25;
 const double SQRT2 = 1.4142135623730950488 ;
 const double WFCoeff [EXPAND] = {0.9940786692, 0.10824442, -0.00939263, 0.00156292, -0.000284251 } ;
-// expand = 4 :::: {0.994077953, 0.10825043, -0.00940132, 0.00157574} -0.000284251 } ;
-const double DELTA = 0.8;
+// expand = 4 :::: {0.994077953, 0.10825043, -0.00940132, 0.00157574} ;
+const double DELTA = 0.5;
 
 
 
@@ -37,7 +37,7 @@ H_{n+1}(r) = 2xH_n (r) - 2nH_{n-1}(r)
 */
 double hermite_Nth(int N, double r){
 	double H0 = 1.0;
-	double H1 = 2.0*r;
+	double H1 = 2*r;
 	double H_n = 0;        // H_n
 	double H_nm1 = 0;      // H_n_minus1
 	double H_np1 = 0;      // H_n_plus1 
@@ -54,7 +54,7 @@ double hermite_Nth(int N, double r){
 	double nfloat;
 	for(int n = 1; n < N; n++ ){
 		nfloat = n;
-		H_np1 = 2.0*r*H_n - 2.0*nfloat*H_nm1 ;
+		H_np1 = 2*r*H_n - 2*nfloat*H_nm1 ;
 		H_nm1 = H_n;
 		H_n = H_np1;
 	}
@@ -100,9 +100,9 @@ double beta_Kth(int K){
 	double Kfloat = K;
 	double factorial = boost::math::factorial<double>(2*Kfloat - 1);
 	//std::cout << "FACTORIAL USED = " << factorial << std::endl;
-	beta = pow(2, 0.5);
-	denom = pow(2, Kfloat) * sqrt(factorial) * pow(2*M_PI, (3.0/4.0) );
-	beta *= 1/denom;
+	beta = sqrt(2);
+	denom = pow(2, Kfloat) * sqrt(factorial) * pow(2*M_PI, 0.75 );
+	beta *= (1/denom);
 	return beta;
 }
 
@@ -226,7 +226,8 @@ double probabiltyWeight(double r1, double r2, double r1Trial, double r2Trial){
 	double WFupTrial = singleParticleWF(EXPAND, r1Trial);
 	double WFdownTrial = singleParticleWF(EXPAND, r2Trial);
 	double WFtotalTrial = WFupTrial * WFdownTrial;
-	double probRatio = (WFtotalTrial/WFtotal)*(WFtotalTrial/WFtotal) ;
+	double probRatio = (WFtotalTrial/WFtotal);
+	probRatio *= probRatio;
 	return probRatio;
 }
 
@@ -248,7 +249,7 @@ double hamiltonianHookium(const int numTerms, double r1, double r2, double r_12)
 	double partialUp = 0;
 	double laplaceWFdown = 0;
 	double partialDown = 0;
-	int K;
+	int K = 0;
 	for(int i = 0; i < numTerms; i++){
 		K = i+1;
 		partialUp = PHI_laplace_Kth(K, r1) * WFCoeff[i];
@@ -324,8 +325,8 @@ void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
 	            int& successCounter,
 	            int& walkerIDX){
 	double x1, y1, z1, x2, y2, z2;
-	double xtrial, ytrial, ztrial;
-	double rTrial;
+	double x1trial, y1trial, z1trial, x2trial, y2trial, z2trial;
+	double r1Trial, r2Trial;
 	double r_12;
 	double r1Current, r2Current;
 	double probTrial;
@@ -340,23 +341,39 @@ void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
     z2 = std::get<2>(vector2[walkerIDX]);
     r2Current = getRvector(x2, y2, z2);
 
-	xtrial = x1 + DELTA*gasdev() ;
-	ytrial = y1 + DELTA*gasdev() ;
-	ztrial = z1 + DELTA*gasdev() ;
-	rTrial = getRvector(xtrial, ytrial, ztrial);
-	probTrial = probabiltyWeight(r1Current, r2Current, rTrial, r2Current);
+	x1trial = x1 + DELTA*gasdev() ;
+	y1trial = y1 + DELTA*gasdev() ;
+	z1trial = z1 + DELTA*gasdev() ;
+	r1Trial = getRvector(x1trial, y1trial, z1trial);
+	x2trial = x2 + DELTA*gasdev() ;
+	y2trial = y2 + DELTA*gasdev() ;
+	z2trial = z2 + DELTA*gasdev() ;
+	r2Trial = getRvector(x2trial, y2trial, z2trial);
+
+
+	probTrial = probabiltyWeight(r1Current, r2Current, r1Trial, r2Trial);
 	//std::cout<< "ProbTrial Value = " << probTrial << std::endl;
 	if( probTrial > metropolisRand ){ // RANDOM SINGLE ELECTRON MOVE ACCEPTED
 		//std::cout << "RANDOM SINGLE ELECTRON MOVE ACCEPTED" << std::endl;
 		successCounter += 1;
-		std::get<0>(vector1[walkerIDX]) = xtrial;
-		std::get<1>(vector1[walkerIDX]) = ytrial;
-		std::get<2>(vector1[walkerIDX]) = ztrial;
+		std::get<0>(vector1[walkerIDX]) = x1trial;
+		std::get<1>(vector1[walkerIDX]) = y1trial;
+		std::get<2>(vector1[walkerIDX]) = z1trial;
+		std::get<0>(vector2[walkerIDX]) = x2trial;
+		std::get<1>(vector2[walkerIDX]) = y2trial;
+		std::get<2>(vector2[walkerIDX]) = z2trial;
+        // UPDATE POSITIONS FROM THE SUCCESSFUL TRIAL MOVES
+		x1 = x1trial;
+    	y1 = y1trial;
+    	z1 = z1trial;
+    	r1Current = getRvector(x1, y1, z1);
+    	x2 = x2trial;
+    	y2 = y2trial;
+    	z2 = z2trial;
+    	r2Current = getRvector(x2, y2, z2);
 	}
-	x1 = std::get<0>(vector1[walkerIDX]);
-    y1 = std::get<1>(vector1[walkerIDX]);
-    z1 = std::get<2>(vector1[walkerIDX]);
-    r1Current = getRvector(x1, y1, z1);
+	
+
 	r_12 = getR12vector(x1, y1, z1, x2, y2, z2);
 	////std::cout << "r_12 = " << r_12 << std::endl;
 	newEnergy = localEnergy(EXPAND, r1Current, r2Current, r_12 );
@@ -403,13 +420,16 @@ int main(void){
 	std::cout << "[x y z] = [" << std::get<0>(r1[0]) <<" "<< std::get<1>(r1[0]) <<" "<< std::get<2>(r1[0]) << "]" << std::endl;
 
 
-
+	/**
+	------------------------------------------------
+	E Q U I L I B R A T I O N   -   S T E P S
+	------------------------------------------------
+	*/
     int success = 0;
     double walkerMeanEnergy = 0;
     for(int idx = 0; idx < numWalkers; idx++){
-    	for(int i = 0; i<numEquilSteps; i++){
+    	for(int i = 0; i<numEquilSteps; i++){ // Perform TWO ELECTRONS at a time!!!
     		metropStep(r1, r2, localEnergyAccumulator, success, idx);
-    		metropStep(r2, r1, localEnergyAccumulator, success, idx);
     	}
     	for(int k = 0; k<localEnergyAccumulator.size(); k++){
     		walkerMeanEnergy += localEnergyAccumulator[k];
@@ -420,7 +440,17 @@ int main(void){
     	localEnergyAccumulator.clear();
     }
 	std::cout << "[x y z] = [" << std::get<0>(r1[0]) <<" "<< std::get<1>(r1[0]) <<" "<< std::get<2>(r1[0]) << "]" << std::endl;
+
+
+
+	/**
+	------------------------------------------------
+	A C C U M U L A T I O N   -   S T E P S
+	------------------------------------------------
+	*/
 	 
+
+
 
 
     std::ofstream energyAccum;
@@ -442,7 +472,7 @@ int main(void){
 	MEAN *= (1/sizefloat);
 	std::cout << "Mean Stochastic Local Energy = " << MEAN << std::endl;
 	std::cout << "Number of successful monte-carlo moves = " << success << std::endl;
-	std::cout << "Proportion of moves which were successful : " << success / ((float)(2*numEquilSteps*numWalkers)) << std::endl; 
+	std::cout << "Proportion of moves which were successful : " << success / ((float)(numEquilSteps*numWalkers)) << std::endl; 
 	
 
 	//std::cout << "c_1 = " << pow((1 - (WFCoeff[1]*WFCoeff[1] + WFCoeff[2]*WFCoeff[2] + WFCoeff[3]*WFCoeff[3] + WFCoeff[4]*WFCoeff[4] )), 0.5) << std::endl;
