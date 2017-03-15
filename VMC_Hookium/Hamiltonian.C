@@ -17,8 +17,8 @@
 #include <boost/math/special_functions/factorials.hpp>
 
 const int EXPAND = 5;
-const int numWalkers = 100;
-const int numEquilSteps = 100000;
+const int numWalkers = 10000;
+const int numEquilSteps = 1000;
 
 const double kspring = 0.25;
 const double SQRT2 = 1.4142135623730950488 ;
@@ -101,7 +101,7 @@ double beta_Kth(int K){
 	double factorial = boost::math::factorial<double>(2*Kfloat - 1);
 	//std::cout << "FACTORIAL USED = " << factorial << std::endl;
 	beta = pow(2, 0.5);
-	denom = pow(2, Kfloat) * pow( factorial ,0.5) * pow(2*M_PI, (3.0/4.0) );
+	denom = pow(2, Kfloat) * sqrt(factorial) * pow(2*M_PI, (3.0/4.0) );
 	beta *= 1/denom;
 	return beta;
 }
@@ -169,7 +169,7 @@ double FofR_diff2_Kth(int K, double r){
 */
 double PHI_Kth(int K, double r){
 	double FofR = FofR_Kth(K, r);
-	double exponent = exp(-(r*r)/4);
+	double exponent = exp(-(r*r)/4.0);
 	double result = FofR*exponent;
 	return result;
 }
