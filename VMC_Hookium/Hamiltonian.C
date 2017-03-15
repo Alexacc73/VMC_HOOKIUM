@@ -16,11 +16,17 @@
 #include <iomanip>
 #include <boost/math/special_functions/factorials.hpp>
 
+const int EXPAND = 5;
+const int numWalkers = 100;
+const int numEquilSteps = 100000;
+
 const double kspring = 0.25;
 const double SQRT2 = 1.4142135623730950488 ;
-const double WFCoeff [4] = {1, 0.10825043, -0.00940132, 0.00157574} ;
-const double DELTA = 0.05;
-const int EXPAND = 4;
+const double WFCoeff [EXPAND] = {0.9940786692, 0.10824442, -0.00939263, 0.00156292, -0.000284251 } ;
+// expand = 4 :::: {0.994077953, 0.10825043, -0.00940132, 0.00157574} -0.000284251 } ;
+const double DELTA = 0.8;
+
+
 
 /**
 * The nth Hermite polynomial:
@@ -286,14 +292,14 @@ V M C  -  R O U T I N E S
 
 double getRvector(double x, double y, double z){
 	double R;
-	R = pow((x*x + y*y + z*z), 0.5);
+	R = sqrt(x*x + y*y + z*z);
 	return R;
 }
 
 double getR12vector(double x1, double y1, double z1, double x2, double y2, double z2){
 	double r_12;
-	r_12 = (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1);
-	r_12 = pow(r_12, 0.5);
+	r_12 = (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2);
+	r_12 = sqrt(r_12);
 	return r_12;
 }
 
@@ -314,7 +320,9 @@ void initialiseWalker(std::vector< std::tuple<double, double, double> >& vector1
 
 void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
 	            std::vector< std::tuple<double, double, double> >& vector2,
-	            std::vector<double>& energyList){
+	            std::vector<double>& energyList,
+	            int& successCounter,
+	            int& walkerIDX){
 	double x1, y1, z1, x2, y2, z2;
 	double xtrial, ytrial, ztrial;
 	double rTrial;
@@ -323,13 +331,13 @@ void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
 	double probTrial;
 	double newEnergy = 0;
 	double metropolisRand = std_rand();
-    x1 = std::get<0>(vector1[0]);
-    y1 = std::get<1>(vector1[0]);
-    z1 = std::get<2>(vector1[0]);
+    x1 = std::get<0>(vector1[walkerIDX]);
+    y1 = std::get<1>(vector1[walkerIDX]);
+    z1 = std::get<2>(vector1[walkerIDX]);
     r1Current = getRvector(x1, y1, z1);
-    x2 = std::get<0>(vector2[0]);
-    y2 = std::get<1>(vector2[0]);
-    z2 = std::get<2>(vector2[0]);
+    x2 = std::get<0>(vector2[walkerIDX]);
+    y2 = std::get<1>(vector2[walkerIDX]);
+    z2 = std::get<2>(vector2[walkerIDX]);
     r2Current = getRvector(x2, y2, z2);
 
 	xtrial = x1 + DELTA*gasdev() ;
@@ -340,19 +348,20 @@ void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
 	//std::cout<< "ProbTrial Value = " << probTrial << std::endl;
 	if( probTrial > metropolisRand ){ // RANDOM SINGLE ELECTRON MOVE ACCEPTED
 		//std::cout << "RANDOM SINGLE ELECTRON MOVE ACCEPTED" << std::endl;
-		std::get<0>(vector1[0]) = xtrial;
-		std::get<1>(vector1[0]) = ytrial;
-		std::get<2>(vector1[0]) = ztrial;
+		successCounter += 1;
+		std::get<0>(vector1[walkerIDX]) = xtrial;
+		std::get<1>(vector1[walkerIDX]) = ytrial;
+		std::get<2>(vector1[walkerIDX]) = ztrial;
 	}
-	x1 = std::get<0>(vector1[0]);
-    y1 = std::get<1>(vector1[0]);
-    z1 = std::get<2>(vector1[0]);
+	x1 = std::get<0>(vector1[walkerIDX]);
+    y1 = std::get<1>(vector1[walkerIDX]);
+    z1 = std::get<2>(vector1[walkerIDX]);
     r1Current = getRvector(x1, y1, z1);
 	r_12 = getR12vector(x1, y1, z1, x2, y2, z2);
 	////std::cout << "r_12 = " << r_12 << std::endl;
 	newEnergy = localEnergy(EXPAND, r1Current, r2Current, r_12 );
 	energyList.push_back(newEnergy);
-	if(newEnergy > 100){
+	if(newEnergy > 500){
 		std::cout << "!!! HIGH ENERGY !!!" << std::endl;
 		std::cout << "Energy = " << newEnergy << std::endl;
 		std::cout << "|r2-r1| distance = " << r_12 << std::endl;
@@ -364,18 +373,19 @@ void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
 
 
 
+
 /**
 ------------------------------------------------
 M A I N  -  S T A R T S  -  H E R E 
 ------------------------------------------------
 */
 int main(void){
-	srand(492832);
+	srand(492831);
 	std::cout << std::setprecision(10);
 	clock_t start;
 	clock_t end;
+	
 
-	std::cout << "Hamiltonian Element : " << hamiltonianHookium(EXPAND, 1, 0.5, 0.5) << std::endl; 
 	/*
 	start = clock();
 	end = clock();
@@ -383,23 +393,59 @@ int main(void){
 	std::cout << "LOOP TIME = " << TIME/CLOCKS_PER_SEC << std::endl;
 	*/
     std::vector<double> localEnergyAccumulator;
-
+    std::vector<double> meanEnergies;
 	std::vector< std::tuple<double, double, double> > r1 ; 
 	std::vector< std::tuple<double, double, double> > r2 ; 
-	initialiseWalker(r1, r2);
+
+    for(int i = 0; i<numWalkers; i++){ // Initialise N walkers
+		initialiseWalker(r1, r2);
+	}
 	std::cout << "[x y z] = [" << std::get<0>(r1[0]) <<" "<< std::get<1>(r1[0]) <<" "<< std::get<2>(r1[0]) << "]" << std::endl;
+
+
+
+    int success = 0;
+    double walkerMeanEnergy = 0;
+    for(int idx = 0; idx < numWalkers; idx++){
+    	for(int i = 0; i<numEquilSteps; i++){
+    		metropStep(r1, r2, localEnergyAccumulator, success, idx);
+    		metropStep(r2, r1, localEnergyAccumulator, success, idx);
+    	}
+    	for(int k = 0; k<localEnergyAccumulator.size(); k++){
+    		walkerMeanEnergy += localEnergyAccumulator[k];
+    	}
+    	walkerMeanEnergy *= ( 1/float(localEnergyAccumulator.size()) );
+    	meanEnergies.push_back(walkerMeanEnergy);
+    	walkerMeanEnergy = 0;
+    	localEnergyAccumulator.clear();
+    }
+	std::cout << "[x y z] = [" << std::get<0>(r1[0]) <<" "<< std::get<1>(r1[0]) <<" "<< std::get<2>(r1[0]) << "]" << std::endl;
+	 
 
 
     std::ofstream energyAccum;
     energyAccum.open("ENERGIES_VMC");
-    for(int i = 0; i<100000; i++){
-    	metropStep(r1, r2, localEnergyAccumulator);
-    	metropStep(r2, r1, localEnergyAccumulator);
-    }
-	std::cout << "[x y z] = [" << std::get<0>(r1[0]) <<" "<< std::get<1>(r1[0]) <<" "<< std::get<2>(r1[0]) << "]" << std::endl;
-	 
-	for(int i = 0; i < localEnergyAccumulator.size(); i++){
-		energyAccum << localEnergyAccumulator[i] << std::endl;
+	double MEAN = 0;
+	double instantE;
+	for(int i = 0; i < meanEnergies.size(); i++){
+		instantE = meanEnergies[i];
+		if(instantE < 100){
+			energyAccum << meanEnergies[i] << std::endl;
+		}
+		else{
+			energyAccum << 0 << std::endl;
+		}
+		
+		MEAN += meanEnergies[i] ;
 	}
-	return 1;
+	float sizefloat = meanEnergies.size() ;
+	MEAN *= (1/sizefloat);
+	std::cout << "Mean Stochastic Local Energy = " << MEAN << std::endl;
+	std::cout << "Number of successful monte-carlo moves = " << success << std::endl;
+	std::cout << "Proportion of moves which were successful : " << success / ((float)(2*numEquilSteps*numWalkers)) << std::endl; 
+	
+
+	//std::cout << "c_1 = " << pow((1 - (WFCoeff[1]*WFCoeff[1] + WFCoeff[2]*WFCoeff[2] + WFCoeff[3]*WFCoeff[3] + WFCoeff[4]*WFCoeff[4] )), 0.5) << std::endl;
+    
+    return 1 ; 
 }
