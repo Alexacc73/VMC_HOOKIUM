@@ -17,14 +17,14 @@
 #include <boost/math/special_functions/factorials.hpp>
 
 const int EXPAND = 5;
-const int numWalkers = 100;
-const int numEquilSteps = 100000;
+const int numWalkers = 1;
+const int numEquilSteps = 1;
 
 const double kspring = 0.25;
 const double SQRT2 = 1.4142135623730950488 ;
-const double WFCoeff [EXPAND] = {0.9940786692, 0.10824442, -0.00939263, 0.00156292, -0.000284251 } ;
+const double WFCoeff [EXPAND] =  {0.9940786692, 0.10824442, -0.00939263, 0.00156292, -0.000284251 } ;
 // expand = 4 :::: {0.994077953, 0.10825043, -0.00940132, 0.00157574} ;
-const double DELTA = 0.5;
+const double DELTA = 0.8;
 
 
 
@@ -36,6 +36,7 @@ H_{n+1}(r) = 2xH_n (r) - 2nH_{n-1}(r)
 \f]
 */
 double hermite_Nth(int N, double r){
+
 	double H0 = 1.0;
 	double H1 = 2*r;
 	double H_n = 0;        // H_n
@@ -45,8 +46,7 @@ double hermite_Nth(int N, double r){
 		return H0;
 	}
 	if(N==1){
-		//std::cout << "H1 USED!" << std::endl;
-		//std::cout << H1 << std::endl;
+		//std::cout << "INSIDE HERMITE ROUTINE, H1: r = " << r << std::endl;
 		return H1;
 	}
 	H_nm1 = H0;
@@ -99,10 +99,9 @@ double beta_Kth(int K){
 	double denom;
 	double Kfloat = K;
 	double factorial = boost::math::factorial<double>(2*Kfloat - 1);
-	//std::cout << "FACTORIAL USED = " << factorial << std::endl;
 	beta = sqrt(2);
-	denom = pow(2, Kfloat) * sqrt(factorial) * pow(2*M_PI, 0.75 );
-	beta *= (1/denom);
+	denom = pow(2, Kfloat) * sqrt(factorial)* pow(2*M_PI, 0.75 );
+	beta *= (1.0/denom);
 	return beta;
 }
 
@@ -114,10 +113,18 @@ double beta_Kth(int K){
 \f]
 */
 double FofR_Kth(int K, double r){
+	if(K == 1){
+		std::cout << "----- 1 ----- r value = " << r << std::endl;
+	}
 	int N = 2*K - 1;
 	double hermite_2km1 = hermite_Nth(N, (r/SQRT2) );
 	double beta = beta_Kth(K);
 	double result = (hermite_2km1*beta) / r;
+	if(K == 1){
+		std::cout << "for phi_1 beta = " << beta << std::endl;
+		std::cout << "H_2k-1 for phi_1 = " << hermite_2km1 << std::endl;
+		std::cout << "----- 2 -----r value = " << r << std::endl;
+	}
 	return result;
 }
 
@@ -169,7 +176,11 @@ double FofR_diff2_Kth(int K, double r){
 */
 double PHI_Kth(int K, double r){
 	double FofR = FofR_Kth(K, r);
-	double exponent = exp(-(r*r)/4.0);
+	double exponent = exp( -((r*r)/4.0) );
+	if(K == 1){
+		std::cout << "FofR at phi_1 = " << FofR << std::endl;
+		std::cout << "Exponent at phi_1 = " << exponent << std::endl;
+	}
 	double result = FofR*exponent;
 	return result;
 }
@@ -206,8 +217,10 @@ double singleParticleWF(const int numTerms, double r ){
 	for(int i = 0; i < numTerms; i++){
 		K = i+1;
 		partialPhiWF = PHI_Kth(K, r);
+		std::cout << "Partial Phi term " << K << " = " << partialPhiWF << std::endl;
 		totalWF += partialPhiWF*WFCoeff[i];
 	}
+	std::cout << "Total single-P WF = " << totalWF << '\n' << std::endl;
 	return totalWF;
 }
 
@@ -221,11 +234,17 @@ double singleParticleWF(const int numTerms, double r ){
 */
 double probabiltyWeight(double r1, double r2, double r1Trial, double r2Trial){
 	double WFup = singleParticleWF(EXPAND, r1);
+
+	std::cout << "_>_>_>_>_>__> FIRST UP DONE _>_>_>_>_>" << std::endl;
+
+
 	double WFdown = singleParticleWF(EXPAND, r2);
 	double WFtotal = WFup * WFdown;
 	double WFupTrial = singleParticleWF(EXPAND, r1Trial);
 	double WFdownTrial = singleParticleWF(EXPAND, r2Trial);
 	double WFtotalTrial = WFupTrial * WFdownTrial;
+	std::cout << "CURRENT WF = " << WFtotal << std::endl;
+	std::cout << "TRIAL WF = " << WFtotalTrial << std::endl;
 	double probRatio = (WFtotalTrial/WFtotal);
 	probRatio *= probRatio;
 	return probRatio;
@@ -244,6 +263,7 @@ double hamiltonianHookium(const int numTerms, double r1, double r2, double r_12)
 	double WFdown = singleParticleWF(numTerms, r2);
 	//std::cout << "Wdown = " << WFdown << std::endl;
 	double WFtotal = WFup*WFdown;
+
 	//std::cout << "WFtotal = " << WFtotal << std::endl;
 	double laplaceWFup = 0;
 	double partialUp = 0;
@@ -252,17 +272,18 @@ double hamiltonianHookium(const int numTerms, double r1, double r2, double r_12)
 	int K = 0;
 	for(int i = 0; i < numTerms; i++){
 		K = i+1;
+		partialUp = partialDown = 0;
 		partialUp = PHI_laplace_Kth(K, r1) * WFCoeff[i];
 		partialDown = PHI_laplace_Kth(K, r2) * WFCoeff[i];
 		laplaceWFup += partialUp;
 		laplaceWFdown += partialDown;
 	}
-	//std::cout << "LAPLACE up = " << laplaceWFup << std::endl;
-	//std::cout << "LAPLACE down = " << laplaceWFdown << std::endl;
+
 	double result;
-	//std::cout << "LASt TERM = " << WFtotal/(fabs(r2-r1)) << std::endl;
-	result = -0.5*(laplaceWFup*WFdown + laplaceWFdown*WFup) + 0.5*kspring*WFtotal*(r1*r1 + r2*r2) + WFtotal/r_12;
-	//std::cout << "END HAMIL RESULT = " << result << std::endl;
+	result = -0.5*(laplaceWFup*WFdown + laplaceWFdown*WFup) + 0.5*kspring*(r1*r1 + r2*r2) + 1/r_12 ;
+	//std::cout << "Two laplacian components = " << -0.5*(laplaceWFup*WFdown + laplaceWFdown*WFup) << std::endl;
+	//std::cout << "Electron interaction parts = " << 0.5*kspring*(r1*r1 + r2*r2) + 1/r_12 << std::endl;
+	//std::cout << "SUMMATION of both - result = " << result << std::endl;
 	return result;
 }
 
@@ -275,9 +296,15 @@ E_L = \frac{ \hat{H} \Psi _T (R)}{\Psi _T (R)}
 \f]
 */
 double localEnergy(const int numTerms, double r1, double r2, double r_12){
-	double hamil = hamiltonianHookium(numTerms, r1, r2, r_12);
-	double WFtotal = singleParticleWF(numTerms, r1) * singleParticleWF(numTerms, r2) ;
-	double result = hamil/WFtotal;
+	double hamil = 0; 
+	double WFtotal = 0; 
+	double result = 0;
+    hamil = hamiltonianHookium(numTerms, r1, r2, r_12);
+	WFtotal = singleParticleWF(numTerms, r1) * singleParticleWF(numTerms, r2) ;
+	result = hamil/WFtotal;
+	std::cout << "Hamiltonian = " << hamil << '\n';
+	std::cout << "TOTAL WF = " << WFtotal << '\n';
+	std::cout << "RESULT of ratio = " << result <<std::endl;
 	return result;
 }
 
@@ -299,7 +326,7 @@ double getRvector(double x, double y, double z){
 
 double getR12vector(double x1, double y1, double z1, double x2, double y2, double z2){
 	double r_12;
-	r_12 = (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2);
+	r_12 = (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1);
 	r_12 = sqrt(r_12);
 	return r_12;
 }
@@ -308,12 +335,12 @@ void initialiseWalker(std::vector< std::tuple<double, double, double> >& vector1
 	                  std::vector< std::tuple<double, double, double> >& vector2){
 	double x1, y1, z1;
 	double x2, y2, z2;
-	x1 = std_rand() - 0.5;
-	y1 = std_rand() - 0.5;
-	z1 = std_rand() - 0.5;
-	x2 = std_rand() - 0.5;
-	y2 = std_rand() - 0.5;
-	z2 = std_rand() - 0.5;
+	x1 = (std_rand() - 0.5)*0.7 ;
+	y1 = (std_rand() - 0.5)*0.7 ;
+	z1 = (std_rand() - 0.5)*0.7 ;
+	x2 = (std_rand() - 0.5)*0.7 ;
+	y2 = (std_rand() - 0.5)*0.7 ;
+	z2 = (std_rand() - 0.5)*0.7 ;
 	vector1.push_back( std::make_tuple(x1, y1, z1) );
 	vector2.push_back( std::make_tuple(x2, y2, z2) );
 }
@@ -352,9 +379,10 @@ void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
 
 
 	probTrial = probabiltyWeight(r1Current, r2Current, r1Trial, r2Trial);
+	std::cout << "Prob Ratio test = " << probTrial << std::endl;
 	//std::cout<< "ProbTrial Value = " << probTrial << std::endl;
 	if( probTrial > metropolisRand ){ // RANDOM SINGLE ELECTRON MOVE ACCEPTED
-		//std::cout << "RANDOM SINGLE ELECTRON MOVE ACCEPTED" << std::endl;
+		std::cout << "RANDOM SINGLE ELECTRON MOVE ACCEPTED" << std::endl;
 		successCounter += 1;
 		std::get<0>(vector1[walkerIDX]) = x1trial;
 		std::get<1>(vector1[walkerIDX]) = y1trial;
@@ -378,7 +406,7 @@ void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
 	////std::cout << "r_12 = " << r_12 << std::endl;
 	newEnergy = localEnergy(EXPAND, r1Current, r2Current, r_12 );
 	energyList.push_back(newEnergy);
-	if(newEnergy > 500){
+	if(newEnergy > 1000000){
 		std::cout << "!!! HIGH ENERGY !!!" << std::endl;
 		std::cout << "Energy = " << newEnergy << std::endl;
 		std::cout << "|r2-r1| distance = " << r_12 << std::endl;
@@ -429,7 +457,11 @@ int main(void){
     double walkerMeanEnergy = 0;
     for(int idx = 0; idx < numWalkers; idx++){
     	for(int i = 0; i<numEquilSteps; i++){ // Perform TWO ELECTRONS at a time!!!
+    		std::cout << "STEP " << i << " ------------------------->" << std::endl; 
+
+
     		metropStep(r1, r2, localEnergyAccumulator, success, idx);
+    		std::cout << " " << std::endl;
     	}
     	for(int k = 0; k<localEnergyAccumulator.size(); k++){
     		walkerMeanEnergy += localEnergyAccumulator[k];
@@ -442,16 +474,12 @@ int main(void){
 	std::cout << "[x y z] = [" << std::get<0>(r1[0]) <<" "<< std::get<1>(r1[0]) <<" "<< std::get<2>(r1[0]) << "]" << std::endl;
 
 
-
 	/**
 	------------------------------------------------
 	A C C U M U L A T I O N   -   S T E P S
 	------------------------------------------------
 	*/
-	 
-
-
-
+	
 
     std::ofstream energyAccum;
     energyAccum.open("ENERGIES_VMC");
@@ -459,13 +487,7 @@ int main(void){
 	double instantE;
 	for(int i = 0; i < meanEnergies.size(); i++){
 		instantE = meanEnergies[i];
-		if(instantE < 100){
-			energyAccum << meanEnergies[i] << std::endl;
-		}
-		else{
-			energyAccum << 0 << std::endl;
-		}
-		
+		energyAccum << meanEnergies[i] << std::endl;
 		MEAN += meanEnergies[i] ;
 	}
 	float sizefloat = meanEnergies.size() ;
