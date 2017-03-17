@@ -16,15 +16,15 @@
 #include <iomanip>
 #include <boost/math/special_functions/factorials.hpp>
 
-const int EXPAND = 1;
-const int numWalkers = 100;
-const int numEquilSteps = 10000000;
+const int EXPAND = 5;
+const int numWalkers = 50;
+const int numEquilSteps = 5000000;
 
 const double kspring = 0.2500000000;
 const double SQRT2 = 1.4142135623730950488 ;
-const double WFCoeff [EXPAND] = {1.0}; // {0.9940786692, 0.10824442, -0.00939263, 0.00156292, -0.000284251 } ;
+const double WFCoeff [EXPAND] = {0.9940786692, 0.10824442, -0.00939263, 0.00156292, -0.000284251 } ;
 // expand = 4 :::: {0.994077953, 0.10825043, -0.00940132, 0.00157574} ;
-const double DELTA = 0.1;
+const double DELTA = 0.3;
 
 
 
@@ -177,10 +177,6 @@ double FofR_diff2_Kth(int K, double r){
 double PHI_Kth(int K, double r){
 	double FofR = FofR_Kth(K, r);
 	double exponent = exp( -((r*r)/4.0) );
-	if(K == 1){
-		//std::cout << "FofR at phi_1 = " << FofR << std::endl;
-		//std::cout << "Exponent at phi_1 = " << exponent << std::endl;
-	}
 	double result = FofR*exponent;
 	return result;
 }
@@ -198,7 +194,7 @@ double PHI_laplace_Kth(int K, double r){
 	double FofR = FofR_Kth(K, r);
 	double FofR_diff1 = FofR_diff1_Kth(K, r);
 	double FofR_diff2 = FofR_diff2_Kth(K, r);
-	double result = exponent*(FofR_diff2 - 4*r*FofR_diff1 + ((4*r*r - 2)*FofR) );
+	double result = exponent*(FofR_diff2 - r*FofR_diff1 + (( (r*r/4) - 0.5)*FofR) );
 	return result;
 }
 
