@@ -16,15 +16,34 @@
 #include <iomanip>
 #include <boost/math/special_functions/factorials.hpp>
 
+/** Number of expansion coefficients to use*/
 const int EXPAND = 5;
-const int numWalkers = 50;
-const int numEquilSteps = 5000000;
 
+const int numWalkers = 100;
+/**Thermalisation Phase */
+const int numEquilSteps = 10000;
+
+/** Accumulations of observables (Local energy) Phase */
+const int numAccumSteps = 50000; 
+
+/**Spring constant in the Hooke's potential in the Hamiltonian - is necessarily set to be 1/4 since this particular
+value os the spring constant gives rise to the only analytically soluble Hamiltonian ground state. The exact analytical 
+Energy is 2, for this k = 0.25.  */
 const double kspring = 0.2500000000;
+
 const double SQRT2 = 1.4142135623730950488 ;
+
+/**Expansion coefficients for the eigenfunctions of the Hamiltonian (which uses a hermite polynomial basis set, which are
+eigenfunctions of the quantum harmoinc oscillator). 5 terms are used to approximate the Hartree Fock single-particle Wavefunction. */
+//const double WFCoeff [EXPAND] = {1.0};
 const double WFCoeff [EXPAND] = {0.9940786692, 0.10824442, -0.00939263, 0.00156292, -0.000284251 } ;
 // expand = 4 :::: {0.994077953, 0.10825043, -0.00940132, 0.00157574} ;
-const double DELTA = 0.3;
+
+/**This coefficients multiplies the gaussian random number generator which is used to impose trial moves on the electrons.
+Smaller values of DELTA result in smaller steps, and a higher acceptance probability of Monte-Carlo moves. DELTA is this tuned
+in order to acheive an acceptance probability of approximately 50% . */
+const double DELTA1 = 1.5;
+const double DELTA2 = 1.0;
 
 
 
@@ -70,7 +89,8 @@ double hermite_Nth(int N, double r){
 */
 double hermite_diff1_Nth(int N, double r){
 	double result;
-	result = 2*N*hermite_Nth(N-1, r );
+	double floatN = N;
+	result = 2.0*floatN*hermite_Nth(N-1, r );
 	return result;
 }
 
@@ -83,7 +103,8 @@ double hermite_diff1_Nth(int N, double r){
 */
 double hermite_diff2_Nth(int N, double r){
 	double result;
-	result = 4*N*(N-1)*hermite_Nth(N-2, r);
+	double floatN = N;
+	result = 4*floatN*(floatN-1)*hermite_Nth(N-2, r);
 	return result;
 }
 
@@ -98,9 +119,9 @@ double beta_Kth(int K){
 	double beta;
 	double denom;
 	double Kfloat = K;
-	double factorial = boost::math::factorial<double>(2*Kfloat - 1);
+	double factorial = boost::math::factorial<double>(2.0*Kfloat - 1);
 	beta = sqrt(2);
-	denom = pow(2, Kfloat) * sqrt(factorial) * pow(2*M_PI, 0.75 );
+	denom = pow(2, Kfloat) * sqrt(factorial) * pow( (2.0*M_PI) , 0.75 );
 	beta *= (1.0/denom);
 	return beta;
 }
@@ -117,15 +138,12 @@ double FofR_Kth(int K, double r){
 	//	std::cout << "----- 1 ----- r value = " << r << std::endl;
 	//}
 	int N = 2*K - 1;
-	double hermite_2km1 = hermite_Nth(N, (r/SQRT2) );
+	double Rinput = (r/SQRT2);
+	double hermite_2km1 = hermite_Nth(N, Rinput );
 	double beta = beta_Kth(K);
 	double result = (hermite_2km1*beta) / r;
-	if(K == 1){
-		//std::cout << "for phi_1 beta = " << beta << std::endl;
-		//std::cout << "H_2k-1 for phi_1 = " << hermite_2km1 << std::endl;
-		//std::cout << "----- 2 -----r value = " << r << std::endl;
-	}
 	return result;
+
 }
 
 
@@ -138,8 +156,9 @@ double FofR_Kth(int K, double r){
 double FofR_diff1_Kth(int K, double r){
 	int N = 2*K - 1;
 	double beta = beta_Kth(K);
-	double hermite_diff1 = hermite_diff1_Nth(N, (r/SQRT2));
-	double hermite_2km1 = hermite_Nth(N, (r/SQRT2));
+	double Rinput = (r/SQRT2);
+	double hermite_diff1 = hermite_diff1_Nth(N, Rinput );
+	double hermite_2km1 = hermite_Nth(N, Rinput );
 	double result = (beta/r)*( hermite_diff1 - (hermite_2km1/r) );
 	return result;
 }
@@ -155,11 +174,13 @@ f''_k(r) = \frac{\beta _k}{r^3} \Big\{  r^2  H''_{2k-1} (\frac{r}{\sqrt{2}}) - 2
 double FofR_diff2_Kth(int K, double r){
 	int N = 2*K - 1;
 	double beta = beta_Kth(K);
-	double hermite_2km1 = hermite_Nth(N, (r/SQRT2));
-	double hermite_diff1 = hermite_diff1_Nth(N, (r/SQRT2));
-	double hermite_diff2 = hermite_diff2_Nth(N, (r/SQRT2));
-	double result = (beta/(r*r*r))*( r*r*hermite_diff2 - 2*r*hermite_diff1 + 2*hermite_2km1 );
+	double Rinput = (r/SQRT2);
+	double hermite_2km1 = hermite_Nth(N, Rinput);
+	double hermite_diff1 = hermite_diff1_Nth(N, Rinput);
+	double hermite_diff2 = hermite_diff2_Nth(N, Rinput);
+	double result = (beta/(r*r*r)) * ( r*r*hermite_diff2 - 2*r*hermite_diff1 + 2*hermite_2km1 );
 	return result;
+
 }
 
 
@@ -194,7 +215,7 @@ double PHI_laplace_Kth(int K, double r){
 	double FofR = FofR_Kth(K, r);
 	double FofR_diff1 = FofR_diff1_Kth(K, r);
 	double FofR_diff2 = FofR_diff2_Kth(K, r);
-	double result = exponent*(FofR_diff2 - r*FofR_diff1 + (( (r*r/4) - 0.5)*FofR) );
+	double result = 0.25*exponent*(4*FofR_diff2 - 4*r*FofR_diff1 + ( (r*r - 2.0)*FofR ) );
 	return result;
 }
 
@@ -230,12 +251,9 @@ double singleParticleWF(const int numTerms, double r ){
 */
 double probabiltyWeight(double r1, double r2, double r1Trial, double r2Trial){
 	double WFup = singleParticleWF(EXPAND, r1);
-
-	//std::cout << "_>_>_>_>_>__> FIRST UP DONE _>_>_>_>_>" << std::endl;
-
-
 	double WFdown = singleParticleWF(EXPAND, r2);
 	double WFtotal = WFup * WFdown;
+
 	double WFupTrial = singleParticleWF(EXPAND, r1Trial);
 	double WFdownTrial = singleParticleWF(EXPAND, r2Trial);
 	double WFtotalTrial = WFupTrial * WFdownTrial;
@@ -321,8 +339,8 @@ double getRvector(double x, double y, double z){
 }
 
 double getR12vector(double x1, double y1, double z1, double x2, double y2, double z2){
-	double r_12;
-	r_12 = (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) + (z2-z1)*(z2-z1);
+	double r_12 = 0;
+	r_12 = (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2);
 	r_12 = sqrt(r_12);
 	return r_12;
 }
@@ -331,12 +349,12 @@ void initialiseWalker(std::vector< std::tuple<double, double, double> >& vector1
 	                  std::vector< std::tuple<double, double, double> >& vector2){
 	double x1, y1, z1;
 	double x2, y2, z2;
-	x1 = (std_rand() - 0.5)*0.2 ;
-	y1 = (std_rand() - 0.5)*0.2 ;
-	z1 = (std_rand() - 0.5)*0.2 ;
-	x2 = (std_rand() - 0.5)*0.2 ;
-	y2 = (std_rand() - 0.5)*0.2 ;
-	z2 = (std_rand() - 0.5)*0.2 ;
+	x1 = (std_rand() - 0.5)*2 ;
+	y1 = (std_rand() - 0.5)*2 ;
+	z1 = (std_rand() - 0.5)*2 ;
+	x2 = (std_rand() - 0.5)*2 ;
+	y2 = (std_rand() - 0.5)*2 ;
+	z2 = (std_rand() - 0.5)*2 ;
 	vector1.push_back( std::make_tuple(x1, y1, z1) );
 	vector2.push_back( std::make_tuple(x2, y2, z2) );
 }
@@ -346,14 +364,24 @@ void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
 	            std::vector< std::tuple<double, double, double> >& vector2,
 	            std::vector<double>& energyList,
 	            int& successCounter,
-	            int& walkerIDX){
+	            int& walkerIDX,
+	            bool& accum){
+	double DELTA;
+	if(accum == true){
+		DELTA = DELTA2;
+	}
+	if(accum == false){
+		DELTA == DELTA1;
+	}
 	double x1, y1, z1, x2, y2, z2;
 	double x1trial, y1trial, z1trial, x2trial, y2trial, z2trial;
 	double r1Trial, r2Trial;
-	double r_12;
+	double r_12, r_12Trial;
 	double r1Current, r2Current;
 	double probTrial;
+	double currentEnergy = 0;
 	double newEnergy = 0;
+	double weightedEnergy = 0;
 	double metropolisRand = std_rand();
     x1 = std::get<0>(vector1[walkerIDX]);
     y1 = std::get<1>(vector1[walkerIDX]);
@@ -363,39 +391,59 @@ void metropStep(std::vector< std::tuple<double, double, double> >& vector1,
     y2 = std::get<1>(vector2[walkerIDX]);
     z2 = std::get<2>(vector2[walkerIDX]);
     r2Current = getRvector(x2, y2, z2);
+    r_12 = getR12vector(x1, y1, z1, x2, y2, z2);
 
-	x1trial = x1 + DELTA*gasdev() ;
-	y1trial = y1 + DELTA*gasdev() ;
-	z1trial = z1 + DELTA*gasdev() ;
+    /*STEP 1: Propose a move from R --> R' */
+	x1trial = x1 + DELTA*(std_rand() - 0.5 ) ;
+	y1trial = y1 + DELTA*(std_rand() - 0.5 ) ;
+	z1trial = z1 + DELTA*(std_rand() - 0.5 ) ;
 	r1Trial = getRvector(x1trial, y1trial, z1trial);
-	x2trial = x2 + DELTA*gasdev() ;
-	y2trial = y2 + DELTA*gasdev() ;
-	z2trial = z2 + DELTA*gasdev() ;
+	x2trial = x2 + DELTA*(std_rand() - 0.5 ) ;
+	y2trial = y2 + DELTA*(std_rand() - 0.5 ) ;
+	z2trial = z2 + DELTA*(std_rand() - 0.5 ) ;
 	r2Trial = getRvector(x2trial, y2trial, z2trial);
+	r_12Trial = getR12vector(x1trial, y1trial, z1trial, x2trial, y2trial, z2trial );
 
-
+    /*STEP 2: Calculate the probability weighting:*/
 	probTrial = probabiltyWeight(r1Current, r2Current, r1Trial, r2Trial);
+
+    /*STEP 3 (Accumulation phase only): Accumulate the contribution to the local energy
+    weighted by the metropolis acceptance criteria*/
+	if(accum == true){
+		currentEnergy = localEnergy(EXPAND, r1Current, r2Current, r_12);
+		newEnergy = localEnergy(EXPAND, r1Trial, r2Trial, r_12Trial);
+		weightedEnergy = (probTrial*newEnergy) + (1.0-probTrial)*currentEnergy;
+		energyList.push_back(weightedEnergy);
+	}
 	//std::cout << "Prob Ratio test = " << probTrial << std::endl;
 	//std::cout<< "ProbTrial Value = " << probTrial << std::endl;
+
+	/*STEP 4: Accept or Reject the new move*/
 	if( probTrial > metropolisRand ){ // RANDOM SINGLE ELECTRON MOVE ACCEPTED
 		//std::cout << "RANDOM SINGLE ELECTRON MOVE ACCEPTED" << std::endl;
 		successCounter += 1;
+		// UPDATE POSITIONS FROM THE SUCCESSFUL TRIAL MOVES
 		std::get<0>(vector1[walkerIDX]) = x1 = x1trial;
 		std::get<1>(vector1[walkerIDX]) = y1 = y1trial;
 		std::get<2>(vector1[walkerIDX]) = z1 = z1trial;
 		std::get<0>(vector2[walkerIDX]) = x2 = x2trial;
 		std::get<1>(vector2[walkerIDX]) = y2 = y2trial;
 		std::get<2>(vector2[walkerIDX]) = z2 = z2trial;
-        // UPDATE POSITIONS FROM THE SUCCESSFUL TRIAL MOVES
-    	r1Current = getRvector(x1, y1, z1);
-    	r2Current = getRvector(x2, y2, z2);
+
+		if(accum = false){ // Only necessary to update the following values in the equilibration phase
+			r1Current = r1Trial;
+    		r2Current = r2Trial;
+    		r_12 = r_12Trial;
+    	}
 	}
 	
 
-	r_12 = getR12vector(x1, y1, z1, x2, y2, z2);
 	////std::cout << "r_12 = " << r_12 << std::endl;
-	newEnergy = localEnergy(EXPAND, r1Current, r2Current, r_12 );
-	energyList.push_back(newEnergy);
+	if(accum == false){
+		newEnergy = localEnergy(EXPAND, r1Current, r2Current, r_12 );
+		energyList.push_back(newEnergy);
+	}
+
 	if(newEnergy > 10000){
 		std::cout << "!!! HIGH ENERGY !!!" << std::endl;
 		std::cout << "Energy = " << newEnergy << std::endl;
@@ -415,7 +463,7 @@ M A I N  -  S T A R T S  -  H E R E
 ------------------------------------------------
 */
 int main(void){
-	srand(492831);
+	srand(492830);
 	std::cout << std::setprecision(10);
 	clock_t start;
 	clock_t end;
@@ -427,12 +475,25 @@ int main(void){
 	double TIME = end-start;
 	std::cout << "LOOP TIME = " << TIME/CLOCKS_PER_SEC << std::endl;
 	*/
+
+    
+
+    std::vector<double> localEn_Equilibrate;
+    std::vector<double> meanEnergiesEquilibrate;
+
+	/**Local Energy:  \f$ E_l = \frac{H \Psi}{\Psi} \f$*/
     std::vector<double> localEnergyAccumulator;
-    std::vector<double> meanEnergies;
+    /**Square od the local energy (used to calculate the variance, etc.) */
+    std::vector<double> E_lAccumSqrd;
+
+    std::vector<double> meanEnergiesAccum;
+
 	std::vector< std::tuple<double, double, double> > r1 ; 
 	std::vector< std::tuple<double, double, double> > r2 ; 
 
-    for(int i = 0; i<numWalkers; i++){ // Initialise N walkers
+
+    /** -------------> INITIALISE N WALKERS <---------------- */
+    for(int i = 0; i<numWalkers; i++){ 
 		initialiseWalker(r1, r2);
 	}
 	std::cout << "[x y z] = [" << std::get<0>(r1[0]) <<" "<< std::get<1>(r1[0]) <<" "<< std::get<2>(r1[0]) << "]" << std::endl;
@@ -443,47 +504,83 @@ int main(void){
 	E Q U I L I B R A T I O N   -   S T E P S
 	------------------------------------------------
 	*/
+	bool ACCUM1 = false;
     int success = 0;
     double walkerMeanEnergy = 0;
+
+
     for(int idx = 0; idx < numWalkers; idx++){
     	for(int i = 0; i<numEquilSteps; i++){ // Perform TWO ELECTRONS at a time!!!
-    		//std::cout << "STEP " << i << " ------------------------->" << std::endl; 
-
-    		metropStep(r1, r2, localEnergyAccumulator, success, idx);
-    		//std::cout << " " << std::endl;
+    		metropStep(r1, r2, localEn_Equilibrate, success, idx, ACCUM1);
+    		walkerMeanEnergy += localEn_Equilibrate[i];
     	}
-    	for(int k = 0; k<localEnergyAccumulator.size(); k++){
-    		walkerMeanEnergy += localEnergyAccumulator[k];
-    	}
-    	walkerMeanEnergy *= ( 1/float(localEnergyAccumulator.size()) );
-    	meanEnergies.push_back(walkerMeanEnergy);
+    	walkerMeanEnergy *= ( 1.0/double(localEn_Equilibrate.size()) );
+    	meanEnergiesEquilibrate.push_back(walkerMeanEnergy);
     	walkerMeanEnergy = 0;
-    	localEnergyAccumulator.clear();
+    	localEn_Equilibrate.clear();
     }
+
+
 	std::cout << "[x y z] = [" << std::get<0>(r1[0]) <<" "<< std::get<1>(r1[0]) <<" "<< std::get<2>(r1[0]) << "]" << std::endl;
 
+
+    std::ofstream energyEquil;
+    energyEquil.open("ENERGIES_VMC");
+	double instantE;
+	double MEAN = 0;
+	for(int i = 0; i < meanEnergiesEquilibrate.size(); i++){
+		instantE = meanEnergiesEquilibrate[i];
+		energyEquil << meanEnergiesEquilibrate[i] << std::endl;
+		MEAN += meanEnergiesEquilibrate[i] ;
+	}
+
+
+	energyEquil.close();
+	std::cout << " ----- EQUILIBRATION COMPLETE -> DATA WRITTEN TO FILE ----- " << '\n' << std::endl;
+	double sizefloat = meanEnergiesEquilibrate.size() ;
+	MEAN *= (1.0/sizefloat);
+	std::cout << "Mean Stochastic Local Energy after Equilibration = " << MEAN << std::endl;
+	std::cout << "Number of successful monte-carlo moves = " << success << std::endl;
+	std::cout << "Proportion of moves which were successful : " << success / ((float)(numEquilSteps*numWalkers)) << '\n' << std::endl; 
 
 	/**
 	------------------------------------------------
 	A C C U M U L A T I O N   -   S T E P S
 	------------------------------------------------
 	*/
+	std::cout << " ----- BEGIN ACCUMULATION PHASE -----" << std::endl;
+
+	
+	bool ACCUM2 = true;
+	int successAccum = 0;
+	double accumMean = 0;
+	for(int idx = 0; idx < numWalkers; idx++){
+		for(int mv = 0; mv < numAccumSteps; mv++){
+			metropStep(r1, r2, localEnergyAccumulator, successAccum, idx, ACCUM2);
+			accumMean += localEnergyAccumulator[mv];
+		}
+		accumMean = (accumMean / double(localEnergyAccumulator.size()) ) ;
+		meanEnergiesAccum.push_back(accumMean);
+		accumMean = 0;
+		localEnergyAccumulator.clear(); 
+	}
+
+	std::ofstream energyAccumfile;
+    energyAccumfile.open("ENERGIES_ACCUM_VMC");
+	double instantEAccum;
+	double globalAccumMean = 0;
+	for(int i = 0; i < meanEnergiesAccum.size(); i++){
+		instantEAccum = meanEnergiesAccum[i];
+		energyAccumfile << meanEnergiesAccum[i] << std::endl;
+		globalAccumMean += meanEnergiesAccum[i] ;
+	}
+	energyAccumfile.close();
+	double numAccums = meanEnergiesAccum.size();
+	globalAccumMean *= (1.0/numAccums);
+	std::cout << "Mean Stochastic Local Energy after ACCUMULATION = " << globalAccumMean << std::endl;
+	std::cout << "Number of successful monte-carlo moves in ACCUMULATION phase = " << successAccum << std::endl;
 	
 
-    std::ofstream energyAccum;
-    energyAccum.open("ENERGIES_VMC");
-	double MEAN = 0;
-	double instantE;
-	for(int i = 0; i < meanEnergies.size(); i++){
-		instantE = meanEnergies[i];
-		energyAccum << meanEnergies[i] << std::endl;
-		MEAN += meanEnergies[i] ;
-	}
-	float sizefloat = meanEnergies.size() ;
-	MEAN *= (1/sizefloat);
-	std::cout << "Mean Stochastic Local Energy = " << MEAN << std::endl;
-	std::cout << "Number of successful monte-carlo moves = " << success << std::endl;
-	std::cout << "Proportion of moves which were successful : " << success / ((float)(numEquilSteps*numWalkers)) << std::endl; 
 	
 
 	//std::cout << "c_1 = " << pow((1 - (WFCoeff[1]*WFCoeff[1] + WFCoeff[2]*WFCoeff[2] + WFCoeff[3]*WFCoeff[3] + WFCoeff[4]*WFCoeff[4] )), 0.5) << std::endl;
